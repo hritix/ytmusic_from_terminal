@@ -15,17 +15,6 @@ else:
     search_results = ym().search(input("Enter song name: "), "songs")
 
 
-print("done")
-# for item in search_results:
-#    if item.get("category") == "Top result":
-#        print("Title:", item.get("title"))
-#        print("Type:", item.get("resultType"))
-#        vid_id = item.get("videoId")
-#        song_url = f"{base_url}{vid_id}" if vid_id else None
-#        print("URL:", song_url)
-#        subprocess.run(["mpv", "--no-video", song_url])
-
-
 def get_views(a):
     weight = {"K": 1000, "M": 1000000, "B": 1000000000}
     multiplier = weight.get(a[-1], 1)
@@ -36,7 +25,6 @@ def get_views(a):
 
 
 def max_views_song():
-    song_dict = {}
     max_views = 0
     max_views_id = 0
     for i in range(len(search_results)):
@@ -51,7 +39,7 @@ def max_views_song():
     vid_id = song.get("videoId")
     song_url = f"{base_url}{vid_id}" if vid_id else None
     print("URL:", song_url)
-    subprocess.run(["mpv", "--no-video", song_url])
+    run(["mpv", "--no-video", song_url])
 
 
 def all_songs_choice():
@@ -61,7 +49,7 @@ def all_songs_choice():
             f"{song.get('title')}:{song.get('artists')[0].get('name')}:{song.get('videoId')}:{song.get('views')}"
         )
     choices = "\n".join(newlist)
-    song = run(["fzf"], input=choices, text=True, capture_output=True)
+    song = run(["fzf", "--reverse"], input=choices, text=True, capture_output=True)
     song = song.stdout[:-1]
     song = song.split(":")
     print("Title:", song[0])
