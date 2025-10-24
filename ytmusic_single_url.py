@@ -15,14 +15,14 @@ mpv_path = (
 
 def search():
     if len(sys.argv) > 1:
-        return ym().search(" ".join(sys.argv[1:]), "songs")
+        return ym().search(" ".join(sys.argv[1:]), "songs", limit=50)
         sys.argv = sys.argv[:1]
     else:
         search_query = input("Enter song name: ")
         if search_query in ["quit", "q", "exit", ""]:
             sys.exit()
         else:
-            return ym().search(search_query, "songs")
+            return ym().search(search_query, "songs", limit=50)
 
 
 def get_views(a):
