@@ -8,11 +8,21 @@ from ytmusicapi import YTMusic as ym
 from subprocess import run
 
 base_url = "https://music.youtube.com/watch?v="
+mpv_path = (
+    "ampv"  # usinng the alternate mpv installation as the official arch package broken
+)
 
-if len(sys.argv) > 1:
-    search_results = ym().search(sys.argv[1], "songs")
-else:
-    search_results = ym().search(input("Enter song name: "), "songs")
+
+def search():
+    if len(sys.argv) > 1:
+        return ym().search(" ".join(sys.argv[1:]), "songs")
+        sys.argv = sys.argv[:1]
+    else:
+        search_query = input("Enter song name: ")
+        if search_query in ["quit", "q", "exit", ""]:
+            sys.exit()
+        else:
+            return ym().search(search_query, "songs")
 
 
 def get_views(a):
@@ -39,25 +49,35 @@ def max_views_song():
     vid_id = song.get("videoId")
     song_url = f"{base_url}{vid_id}" if vid_id else None
     print("URL:", song_url)
-    run(["mpv", "--no-video", song_url])
+    run([mpv_path, "--script=/etc/mpv/scripts/mpris.so", "--no-video", song_url])
 
 
 def all_songs_choice():
     newlist = []
     for song in search_results:
         newlist.append(
-            f"{song.get('title')}:{song.get('artists')[0].get('name')}:{song.get('videoId')}:{song.get('views')}"
+            f"{song.get('title')}::{song.get('artists')[0].get('name')}::{song.get('videoId')}::{song.get('views')}"
         )
     choices = "\n".join(newlist)
-    song = run(["fzf", "--reverse"], input=choices, text=True, capture_output=True)
-    song = song.stdout[:-1]
-    song = song.split(":")
-    print("Title:", song[0])
-    print("Artist:", song[1])
-    vid_id = song[2]
-    song_url = f"{base_url}{vid_id}" if vid_id else None
-    print("URL:", song_url)
-    run(["mpv", "--no-video", song_url])
+    songs = run(
+        ["fzf", "--multi", "--reverse"], input=choices, text=True, capture_output=True
+    )
+    if len(songs.stdout) == 0:
+        print("No Songs Selected.")
+        return 1
+    songs = songs.stdout[:-1]
+    for song in songs.split("\n"):
+        song = song.split("::")
+        print(song)
+        print("Title:", song[0])
+        print("Artist:", song[1])
+        vid_id = song[2]
+        song_url = f"{base_url}{vid_id}" if vid_id else None
+        print("URL:", song_url)
+        run([mpv_path, "--script=/etc/mpv/scripts/mpris.so", "--no-video", song_url])
 
 
-all_songs_choice()
+if __name__ == "__main__":
+    while True:
+        search_results = search()
+        all_songs_choice()
