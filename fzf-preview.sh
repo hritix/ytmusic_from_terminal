@@ -4,12 +4,9 @@ ENABLE_IMAGE_PREVIEW=true
 
 imgprv() {
     img_file="$1"
-    preview_dims="$2"
-    final_dims="$preview_dims"
-	kitten icat --clear --transfer-mode=stream --unicode-placeholder --stdin=no --place="${final_dims}@0x0" -- "$img_file" 2>/dev/null
+	final_dims="${FZF_PREVIEW_COLUMNS}x${FZF_PREVIEW_LINES}"
+	chafa -s "$final_dims" -- "$img_file"	
 }
-
-dim="${FZF_PREVIEW_COLUMNS}x${FZF_PREVIEW_LINES}"
 
 url=`printf "$1" | cut -d ":" -f5`
 img_url="https://img.youtube.com/vi/$url/maxresdefault.jpg"
