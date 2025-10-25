@@ -3,6 +3,7 @@
 
 import sys
 from ytmusicapi import YTMusic as ym
+from pathlib import Path
 
 # https://ytmusicapi.readthedocs.io/en/stable/reference/search.html#ytmusicapi.YTMusic.search
 from subprocess import run
@@ -13,16 +14,22 @@ mpv_path = (
 )
 
 
+fzf_preview_file = (
+    "/".join(str(Path(sys.argv[0]).resolve()).split("/")[:-1]) + "/fzf-preview.sh"
+)
+
+
 def search():
     if len(sys.argv) > 1:
-        return ym().search(" ".join(sys.argv[1:]), "songs", limit=50)
+        a = ym().search(" ".join(sys.argv[1:]), "songs", limit=40)
         sys.argv = sys.argv[:1]
+        return a
     else:
         search_query = input("Enter song name: ")
         if search_query in ["quit", "q", "exit", ""]:
             sys.exit()
         else:
-            return ym().search(search_query, "songs", limit=50)
+            return ym().search(search_query, "songs", limit=40)
 
 
 def get_views(a):
@@ -60,15 +67,27 @@ def all_songs_choice():
         )
     choices = "\n".join(newlist)
     songs = run(
-        ["fzf", "--multi", "--reverse"], input=choices, text=True, capture_output=True
+        [
+            "fzf",
+            "--multi",
+            "--height",
+            "60%",
+            "--reverse",
+            "--preview",
+            fzf_preview_file + " {}",
+            "--preview-window=default:right:60%",
+        ],
+        input=choices,
+        text=True,
+        capture_output=True,
     )
     if len(songs.stdout) == 0:
         print("No Songs Selected.")
         return 1
     songs = songs.stdout[:-1]
     for song in songs.split("\n"):
-        song = song.split("::")
         print(song)
+        song = song.split("::")
         print("Title:", song[0])
         print("Artist:", song[1])
         vid_id = song[2]
