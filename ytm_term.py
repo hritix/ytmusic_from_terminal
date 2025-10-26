@@ -1,4 +1,4 @@
-#!/home/rtx/prjs/python_venvs/web_scraping/bin/python
+#!/home/rtx/prjs/projects/github_back/ytmusic_from_terminal/.venv/bin/python
 
 
 import sys
@@ -75,7 +75,7 @@ def all_songs_choice():
             "--reverse",
             "--preview",
             fzf_preview_file + " {}",
-            "--preview-window=default:right:60%",
+            "--preview-window=default:right:40%",
         ],
         input=choices,
         text=True,
