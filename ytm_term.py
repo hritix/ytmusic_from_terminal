@@ -1,35 +1,38 @@
-#!/home/rtx/prjs/projects/github_back/ytmusic_from_terminal/.venv/bin/python
-
+#!/home/rtx/prjs/github_hritix/ytmusic_from_terminal/.venv/bin/python
 
 import sys
 from ytmusicapi import YTMusic as ym
 from pathlib import Path
+from os import getenv
 
 # https://ytmusicapi.readthedocs.io/en/stable/reference/search.html#ytmusicapi.YTMusic.search
 from subprocess import run
 
-base_url = "https://music.youtube.com/watch?v="
-mpv_path = (
-    "ampv"  # usinng the alternate mpv installation as the official arch package broken
-)
+HOME = getenv("HOME")
+download_folder=rf"{HOME}/Music/"
 
+base_url = "https://music.youtube.com/watch?v="
+tools={"mpv":['mpv','--no-video'],"downloader":['yt-dlp', '-f', 'bestaudio[ext=m4a]','--embed-thumbnail', '--ppa','ThumbnailsConvertor+FFmpeg_o:-vf crop=ih:ih','-P',f'{download_folder}']}
+tool=tools["mpv"]
 
 fzf_preview_file = (
-    "/".join(str(Path(sys.argv[0]).resolve()).split("/")[:-1]) + "/fzf-preview.sh"
-)
+        "/".join(str(Path(sys.argv[0]).resolve()).split("/")[:-1]) + "/fzf-preview.sh"
+        ) #this will make it so that it works when the preview script is in the same folder as the python file
 
-
-def search():
+def search(search_logs_file):
+    global tool
     if len(sys.argv) > 1:
-        a = ym().search(" ".join(sys.argv[1:]), "songs", limit=40)
-        sys.argv = sys.argv[:1]
-        return a
+        search_query=" ".join(sys.argv[1:])
     else:
-        search_query = input("Enter song name: ")
-        if search_query in ["quit", "q", "exit", ""]:
-            sys.exit()
-        else:
-            return ym().search(search_query, "songs", limit=40)
+        search_query = input("Enter Song Name: ")
+
+    if search_query in ["quit", "q", "exit", ""]:
+        sys.exit()
+    else:
+        if search_query[0:2]=="d ":
+            search_query=search_query[2:]
+            tool=tools["downloader"]
+        return ym().search(search_query, "songs", limit=40)
 
 
 def get_views(a):
@@ -56,31 +59,34 @@ def max_views_song():
     vid_id = song.get("videoId")
     song_url = f"{base_url}{vid_id}" if vid_id else None
     print("URL:", song_url)
-    run([mpv_path, "--script=/etc/mpv/scripts/mpris.so", "--no-video", song_url])
+    tool.append(song_url)
+    run(tool)
 
 
 def all_songs_choice():
     newlist = []
     for song in search_results:
         newlist.append(
-            f"{song.get('title')}::{song.get('artists')[0].get('name')}::{song.get('videoId')}::{song.get('views')}"
-        )
+                f"{song.get('title')}::{song.get('artists')[0].get('name')}::{song.get('videoId')}::{song.get('views')}"
+                )
     choices = "\n".join(newlist)
     songs = run(
-        [
-            "fzf",
-            "--multi",
-            "--height",
-            "60%",
-            "--reverse",
-            "--preview",
-            fzf_preview_file + " {}",
-            "--preview-window=default:right:40%",
-        ],
-        input=choices,
-        text=True,
-        capture_output=True,
-    )
+            [
+                "fzf",
+                "--multi",
+                "--height",
+                "60%",
+                "--reverse",
+                "--preview",
+                fzf_preview_file + " {}",
+                "--preview-window=default:left:40%",
+                "--preview-border",
+                "none"
+                ],
+            input=choices,
+            text=True,
+            capture_output=True,
+            )
     if len(songs.stdout) == 0:
         print("No Songs Selected.")
         return 1
@@ -93,10 +99,22 @@ def all_songs_choice():
         vid_id = song[2]
         song_url = f"{base_url}{vid_id}" if vid_id else None
         print("URL:", song_url)
-        run([mpv_path, "--script=/etc/mpv/scripts/mpris.so", "--no-video", song_url])
+        tool.append(song_url)
+        run(tool)
+
+
+def logs(song_info, search_logs_file, file_urls):
+    pass
 
 
 if __name__ == "__main__":
+    Path(rf"{HOME}/.config/ytm_term").mkdir(parents=True, exist_ok=True)
+    # I am defining these outside the logs function because, then we will not have to close and open this everytime log function is over.
+    search_logs_file = open(rf"{HOME}/.config/ytm_term/searches.txt", "a+")
+    file_urls = open(rf"{HOME}/.config/ytm_term/urls.txt", "a+")
+    # don't forget to close the files
     while True:
-        search_results = search()
+        run("clear")
+        search_results = search(search_logs_file)
         all_songs_choice()
+    search_logs_file.close()
